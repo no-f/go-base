@@ -7,16 +7,11 @@ import (
 	"go-base/apollo/model"
 	"log"
 	"strings"
+	"sync"
 )
 
-var apolloClientV1 agollo.Client
-var apolloClientV2 agollo.Client
-
-var allNamespaceNameV1 string
-var allNamespaceNameV2 string
-
-var namespacesV1 []string
-var namespacesV2 []string
+var apolloClient agollo.Client
+var namespaces []string
 
 // init 初始化
 func init() {
@@ -25,16 +20,20 @@ func init() {
 		log.Fatalf("LoadConfig失败: %v", err)
 	}
 
-	allNamespaceNameV1 = info.Namespace + apolloConfig.Apollo.CommonNamespaceName
-	allNamespaceNameV2 = "application," + apolloConfig.Apollo.NamespaceName
+	// 构造命名空间列表
+	allNamespaceNames := []string{
+		info.Namespace + apolloConfig.Apollo.CommonNamespaceName,
+		"application," + apolloConfig.Apollo.NamespaceName,
+	}
 
-	apolloClientV1 = initApolloClient(allNamespaceNameV1, apolloConfig)
-	apolloClientV2 = initApolloClient(allNamespaceNameV2, apolloConfig)
+	// 初始化 Apollo 客户端
+	apolloClient = initApolloClient(strings.Join(allNamespaceNames, ","), apolloConfig)
 
-	namespacesV1 = strings.Split(allNamespaceNameV1, ",")
-	namespacesV2 = strings.Split(allNamespaceNameV2, ",")
+	// 将命名空间拆分为 slice
+	namespaces = strings.Split(strings.Join(allNamespaceNames, ","), ",")
 }
 
+// initApolloClient 初始化 Apollo 客户端
 func initApolloClient(namespaceName string, apolloConfig *model.ApolloConfig) agollo.Client {
 	c := &config.AppConfig{
 		AppID:          apolloConfig.Apollo.AppID,
@@ -49,35 +48,59 @@ func initApolloClient(namespaceName string, apolloConfig *model.ApolloConfig) ag
 	if err != nil {
 		log.Fatalf("StartWithConfig失败: %v", err)
 	}
-
 	return client
 }
 
 // GetConfigValue 根据给定的 key 获取配置值
 func GetConfigValue(key string) string {
-	value := getConfigValueFromClient(apolloClientV1, namespacesV1, key)
-	if value != "" {
-		return value
-	}
-	return getConfigValueFromClient(apolloClientV2, namespacesV2, key)
+	// 使用并发方式从命名空间获取配置值
+	return getConfigValueFromClient(apolloClient, namespaces, key)
 }
 
+// getConfigValueFromClient 从指定命名空间列表中获取配置值
 func getConfigValueFromClient(client agollo.Client, namespaces []string, key string) string {
+	results := make(chan string, len(namespaces))
+	var wg sync.WaitGroup
+
+	// 并发获取每个命名空间的配置
 	for _, ns := range namespaces {
-		cache := client.GetConfigCache(ns)
-		if cache == nil {
-			log.Printf("Namespace cache not found for: %s", ns)
-			continue
+		wg.Add(1)
+		go func(ns string) {
+			defer wg.Done()
+			cache := client.GetConfigCache(ns)
+			if cache != nil {
+				value, err := cache.Get(key)
+				if err == nil {
+					if valueStr, ok := value.(string); ok {
+						results <- valueStr
+						return
+					}
+				} else {
+					log.Printf("Failed to get config value for key %s in namespace %s: %v", key, ns, err)
+				}
+			} else {
+				log.Printf("Namespace cache not found for: %s", ns)
+			}
+			results <- ""
+		}(ns)
+	}
+
+	// 等待所有并发获取完成
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	// 获取第一个非空的配置值
+	for result := range results {
+		if result != "" {
+			return result
 		}
-		value, err := cache.Get(key)
-		if err == nil {
-			return toString(value)
-		}
-		log.Printf("Failed to get config value for key %s in namespace %s: %v", key, ns, err)
 	}
 	return ""
 }
 
+// toString 将 interface{} 转换为 string
 func toString(value interface{}) string {
 	if str, ok := value.(string); ok {
 		return str
