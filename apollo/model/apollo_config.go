@@ -21,7 +21,7 @@ func LoadConfig() (*ApolloConfig, error) {
 	var apolloConfig ApolloConfig
 
 	// 从文件中读取YAML配置
-	yamlFile, err := os.ReadFile("E:\\no_f\\code\\github-x\\go\\go-base\\config.yaml")
+	yamlFile, err := os.ReadFile("config.yaml")
 	if err != nil {
 		return nil, err
 	}
