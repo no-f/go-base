@@ -1,7 +1,6 @@
 package apollo
 
 import (
-	"fmt"
 	"github.com/apolloconfig/agollo/v4"
 	"github.com/apolloconfig/agollo/v4/env/config"
 	"go-base/apollo/info"
@@ -21,25 +20,28 @@ var namespacesV2 []string
 
 // init 初始化
 func init() {
-	apolloInitV1()
-	apolloInitV2()
-
-	namespacesV1 = strings.Split(allNamespaceNameV1, ",")
-	namespacesV2 = strings.Split(allNamespaceNameV2, ",")
-}
-
-func initApolloClient(namespaceName string, appID string) agollo.Client {
 	apolloConfig, err := model.LoadConfig()
 	if err != nil {
 		log.Fatalf("LoadConfig失败: %v", err)
 	}
 
+	allNamespaceNameV1 = info.Namespace + apolloConfig.Apollo.CommonNamespaceName
+	allNamespaceNameV2 = "application," + apolloConfig.Apollo.NamespaceName
+
+	apolloClientV1 = initApolloClient(allNamespaceNameV1, apolloConfig)
+	apolloClientV2 = initApolloClient(allNamespaceNameV2, apolloConfig)
+
+	namespacesV1 = strings.Split(allNamespaceNameV1, ",")
+	namespacesV2 = strings.Split(allNamespaceNameV2, ",")
+}
+
+func initApolloClient(namespaceName string, apolloConfig *model.ApolloConfig) agollo.Client {
 	c := &config.AppConfig{
-		AppID:          appID,
+		AppID:          apolloConfig.Apollo.AppID,
 		Cluster:        apolloConfig.Apollo.Cluster,
 		IP:             apolloConfig.Apollo.Meta,
 		NamespaceName:  namespaceName,
-		IsBackupConfig: true,
+		IsBackupConfig: false,
 	}
 	client, err := agollo.StartWithConfig(func() (*config.AppConfig, error) {
 		return c, nil
@@ -49,26 +51,6 @@ func initApolloClient(namespaceName string, appID string) agollo.Client {
 	}
 
 	return client
-}
-
-func apolloInitV1() {
-	apolloConfig, err := model.LoadConfig()
-	if err != nil {
-		fmt.Printf("LoadConfig失败: %v", err)
-		panic("无法加载配置")
-	}
-	allNamespaceNameV1 = info.Namespace + apolloConfig.Apollo.CommonNamespaceName
-	apolloClientV1 = initApolloClient(allNamespaceNameV1, "bullyun-v2")
-}
-
-func apolloInitV2() {
-	apolloConfig, err := model.LoadConfig()
-	if err != nil {
-		fmt.Printf("LoadConfig失败: %v", err)
-		panic("无法加载配置")
-	}
-	allNamespaceNameV2 = "application," + apolloConfig.Apollo.NamespaceName
-	apolloClientV2 = initApolloClient(allNamespaceNameV2, apolloConfig.Apollo.AppID)
 }
 
 // GetConfigValue 根据给定的 key 获取配置值
