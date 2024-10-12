@@ -3,8 +3,8 @@ package apollo
 import (
 	"github.com/apolloconfig/agollo/v4"
 	"github.com/apolloconfig/agollo/v4/env/config"
-	"github.com/no-f/go-base/apollo/info"
-	"github.com/no-f/go-base/apollo/model"
+	"github.com/bullyun/go-base/apollo/info"
+	"github.com/bullyun/go-base/apollo/model"
 	"log"
 	"strings"
 	"sync"
@@ -75,8 +75,6 @@ func fetchConfigValueFromClient(client agollo.Client, namespaces []string, key s
 						results <- valueStr
 						return
 					}
-				} else {
-					log.Printf("Failed to get config value for key %s in namespace %s: %v", key, ns, err)
 				}
 			} else {
 				log.Printf("Namespace cache not found for: %s", ns)

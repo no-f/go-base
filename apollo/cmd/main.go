@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/no-f/go-base/apollo"
+	"github.com/bullyun/go-base/apollo"
 )
 
 func main() {
