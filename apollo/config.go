@@ -10,8 +10,8 @@ import (
 	"sync"
 )
 
-var apolloClient agollo.Client
-var namespaces []string
+var client agollo.Client
+var namespaceNames []string
 
 // init 初始化
 func init() {
@@ -22,19 +22,19 @@ func init() {
 
 	// 构造命名空间列表
 	allNamespaceNames := []string{
-		info.Namespace + apolloConfig.Apollo.CommonNamespaceName,
-		"application," + apolloConfig.Apollo.NamespaceName,
+		info.BullyunV2Namespace + apolloConfig.Apollo.CommonNamespaceName,
+		info.ServiceNamespace + apolloConfig.Apollo.NamespaceName,
 	}
 
 	// 初始化 Apollo 客户端
-	apolloClient = initApolloClient(strings.Join(allNamespaceNames, ","), apolloConfig)
+	client = initializeApolloClient(strings.Join(allNamespaceNames, ","), apolloConfig)
 
 	// 将命名空间拆分为 slice
-	namespaces = strings.Split(strings.Join(allNamespaceNames, ","), ",")
+	namespaceNames = strings.Split(strings.Join(allNamespaceNames, ","), ",")
 }
 
 // initApolloClient 初始化 Apollo 客户端
-func initApolloClient(namespaceName string, apolloConfig *model.ApolloConfig) agollo.Client {
+func initializeApolloClient(namespaceName string, apolloConfig *model.ApolloConfig) agollo.Client {
 	c := &config.AppConfig{
 		AppID:          apolloConfig.Apollo.AppID,
 		Cluster:        apolloConfig.Apollo.Cluster,
@@ -54,11 +54,11 @@ func initApolloClient(namespaceName string, apolloConfig *model.ApolloConfig) ag
 // GetConfigValue 根据给定的 key 获取配置值
 func GetConfigValue(key string) string {
 	// 使用并发方式从命名空间获取配置值
-	return getConfigValueFromClient(apolloClient, namespaces, key)
+	return fetchConfigValueFromClient(client, namespaceNames, key)
 }
 
 // getConfigValueFromClient 从指定命名空间列表中获取配置值
-func getConfigValueFromClient(client agollo.Client, namespaces []string, key string) string {
+func fetchConfigValueFromClient(client agollo.Client, namespaces []string, key string) string {
 	results := make(chan string, len(namespaces))
 	var wg sync.WaitGroup
 
