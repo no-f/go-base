@@ -4,41 +4,30 @@ import (
 	"github.com/apolloconfig/agollo/v4"
 	"github.com/apolloconfig/agollo/v4/env/config"
 	"github.com/no-f/go-base/apollo/info"
-	"github.com/no-f/go-base/apollo/model"
+	"github.com/no-f/go-base/config/models"
+	"github.com/no-f/go-base/logger"
 	"log"
 	"strings"
 	"sync"
 )
 
-var client agollo.Client
+var apolloClient agollo.Client
 var namespaceNames []string
 
-// init 初始化
-func init() {
-	apolloConfig, err := model.LoadConfig()
-	if err != nil {
-		log.Fatalf("LoadConfig失败: %v", err)
-	}
+// Initialize 初始化 Apollo 客户端
+func Initialize(apolloConfig *models.ApolloYAMLConfig) {
 
-	// 构造命名空间列表
+	logger.Info("开始初始化 APOLLO 客户端")
 	allNamespaceNames := []string{
-		info.BullyunV2Namespace + apolloConfig.Apollo.CommonNamespaceName,
-		info.ServiceNamespace + apolloConfig.Apollo.NamespaceName,
+		info.BullyunV2Namespace + apolloConfig.CommonNamespaceName,
+		info.ServiceNamespace + apolloConfig.NamespaceName,
 	}
+	namespaceName := strings.Join(allNamespaceNames, ",")
 
-	// 初始化 Apollo 客户端
-	client = initializeApolloClient(strings.Join(allNamespaceNames, ","), apolloConfig)
-
-	// 将命名空间拆分为 slice
-	namespaceNames = strings.Split(strings.Join(allNamespaceNames, ","), ",")
-}
-
-// initApolloClient 初始化 Apollo 客户端
-func initializeApolloClient(namespaceName string, apolloConfig *model.ApolloConfig) agollo.Client {
 	c := &config.AppConfig{
-		AppID:          apolloConfig.Apollo.AppID,
-		Cluster:        apolloConfig.Apollo.Cluster,
-		IP:             apolloConfig.Apollo.Meta,
+		AppID:          apolloConfig.AppID,
+		Cluster:        apolloConfig.Cluster,
+		IP:             apolloConfig.Meta,
 		NamespaceName:  namespaceName,
 		IsBackupConfig: false,
 	}
@@ -48,13 +37,15 @@ func initializeApolloClient(namespaceName string, apolloConfig *model.ApolloConf
 	if err != nil {
 		log.Fatalf("StartWithConfig失败: %v", err)
 	}
-	return client
+
+	apolloClient = client
+	namespaceNames = strings.Split(strings.Join(allNamespaceNames, ","), ",")
 }
 
 // GetConfigValue 根据给定的 key 获取配置值
 func GetConfigValue(key string) string {
 	// 使用并发方式从命名空间获取配置值
-	return fetchConfigValueFromClient(client, namespaceNames, key)
+	return fetchConfigValueFromClient(apolloClient, namespaceNames, key)
 }
 
 // getConfigValueFromClient 从指定命名空间列表中获取配置值
@@ -94,14 +85,6 @@ func fetchConfigValueFromClient(client agollo.Client, namespaces []string, key s
 		if result != "" {
 			return result
 		}
-	}
-	return ""
-}
-
-// toString 将 interface{} 转换为 string
-func toString(value interface{}) string {
-	if str, ok := value.(string); ok {
-		return str
 	}
 	return ""
 }
