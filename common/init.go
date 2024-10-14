@@ -9,7 +9,7 @@ import (
 
 // init 初始化
 func init() {
-	configFromYAML, err := config.LoadYAMLConfig("config.yaml")
+	configFromYAML, err := ymlconfig.LoadYAMLConfig("config.yaml")
 	if err != nil {
 		log.Fatalf("Failed to load YAML config: %v", err)
 	}
