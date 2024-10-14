@@ -4,6 +4,7 @@ import (
 	"github.com/apolloconfig/agollo/v4"
 	"github.com/apolloconfig/agollo/v4/env/config"
 	"github.com/no-f/go-base/apollo/info"
+	"github.com/no-f/go-base/config"
 	"github.com/no-f/go-base/config/models"
 	"github.com/no-f/go-base/logger"
 	"log"
@@ -87,4 +88,17 @@ func fetchConfigValueFromClient(client agollo.Client, namespaces []string, key s
 		}
 	}
 	return ""
+}
+
+func init() {
+	configFromYAML, err := ymlconfig.LoadYAMLConfig("config.yaml")
+	if err != nil {
+		log.Fatalf("Failed to load YAML config: %v", err)
+	}
+
+	//init logger
+	logger.Initialize(&configFromYAML.Logger)
+
+	//init apollo
+	Initialize(&configFromYAML.Apollo)
 }

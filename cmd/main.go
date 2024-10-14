@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-
 	vaule := apollo.GetConfigValue("spring.data.mongodb.uri")
 	fmt.Println("测试值:" + vaule)
 

@@ -1,13 +1,14 @@
-package config
+package ymlconfig
 
 import (
+	"github.com/no-f/go-base/config/models"
 	"gopkg.in/yaml.v2"
 	"log"
 	"os"
 )
 
 // LoadYAMLConfig load yaml config
-func LoadYAMLConfig(filePath string) (configFromYAML *YAMLConfig, err error) {
+func LoadYAMLConfig(filePath string) (configFromYAML *models.YAMLConfig, err error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		log.Printf("failed to open YAML config")
@@ -16,7 +17,7 @@ func LoadYAMLConfig(filePath string) (configFromYAML *YAMLConfig, err error) {
 	defer file.Close()
 
 	decoder := yaml.NewDecoder(file)
-	var cfg YAMLConfig
+	var cfg models.YAMLConfig
 	if err := decoder.Decode(&cfg); err != nil {
 		log.Printf("failed to decode YAML config file")
 		return nil, err

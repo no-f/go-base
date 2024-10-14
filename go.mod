@@ -7,7 +7,6 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	go.uber.org/zap v1.17.0
 	gopkg.in/yaml.v2 v2.4.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
