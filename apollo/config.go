@@ -3,8 +3,8 @@ package apollo
 import (
 	"github.com/apolloconfig/agollo/v4"
 	"github.com/apolloconfig/agollo/v4/env/config"
-	"github.com/bullyun/go-base/apollo/info"
-	"github.com/bullyun/go-base/apollo/model"
+	"github.com/no-f/go-base/apollo/info"
+	"github.com/no-f/go-base/apollo/model"
 	"log"
 	"strings"
 	"sync"

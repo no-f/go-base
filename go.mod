@@ -1,4 +1,4 @@
-module github.com/bullyun/go-base
+module github.com/no-f/go-base
 
 go 1.22
 
